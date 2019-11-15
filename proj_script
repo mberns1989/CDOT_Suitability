@@ -45,6 +45,51 @@ for r, e in zip(clip_results, buffered):
 print('The data has been prepared for analysis')
 
 
+#################BERNS DEM TO SLOPE##########################
+import os
+import rasterio
+import glob
+from rasterio.merge import merge
+from arcpy import env
 
-    
+os.chdir(r'C:\Users\bernsm\Desktop\Prog_Auto_FINAL')
+
+#File Paths 
+fp = (r'C:\Users\bernsm\Desktop\Prog_Auto_FINAL')
+output_fp = (r'C:\Users\bernsm\Desktop\Prog_Auto_FINAL\front_range_dem.tif')
+
+#Selecting DEM Files 
+file_dems = "*.tif"
+
+q = os.path.join(fp,file_dems)
+
+#List all DEMs
+all_dems = glob.glob(q)
+
+#Create an Empty List for DEM Mosaic 
+front_range_dem = []
+
+#Append DEM rasters to list
+for dem in all_dems:
+    d = rasterio.open(dem)
+    front_range_dem.append(d)
+
+mosaic, out_trans = merge(front_range_dem)
+
+#Write metadata
+
+metadata = d.meta.copy()
+metadata.update({"driver": "GTiff","height": mosaic.shape[1],"width": mosaic.shape[2],"transform": out_trans,"crs": "+proj=utm +zone=13 +ellps=NAD83 +units=m +no_defs "})
+
+#Output Front Range DEM
+
+with rasterio.open(output_fp, "w", **metadata) as dest:
+    dest.write(mosaic)
+
+#Finding Slope of DEM 
+env.workspace = r'C:\Users\bernsm\Desktop\Prog_Auto_FINAL'
+env.overwriteOutput=1
+
+Front_Range_Slope = Slope("front_range_dem.tif","DEGREE","","PLANAR","METER")
+Front_Range_Slope.save(r'C:\Users\bernsm\Desktop\Prog_Auto_FINAL\Front_Range_Slope.tif')
 
